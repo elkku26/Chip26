@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 
@@ -24,7 +25,14 @@ namespace Graphics
         Stopwatch updateLoop;
         Stopwatch stopwatch;
         Keys[] keys;
+        Color blue;
+        Color[] emptyColors;
+        Color[] colorData;
+        Color[] previousColors;
         Stopwatch spritebatchSW;
+        Dictionary<int, Color> colorLookup;
+        Dictionary<Color, int> reverseColorLookup;
+
 
         public delegate void KeyPressedEventHandler(int key);
         public event KeyPressedEventHandler KeyPressed;
@@ -35,6 +43,8 @@ namespace Graphics
         {
             this.Window.Title = "CHIP-8";
             inter = new Interpreter();
+
+            blue = new Color(90, 135, 197);
 
             KeyPressed += inter.GetKey;
 
@@ -57,16 +67,31 @@ namespace Graphics
         /// </summary>
         protected override void Initialize()
         {
+            colorLookup = new Dictionary<int, Color>
+            {   // 0 = black
+                {0, new Color(0,0,0)},
+                //1 = blue
+                {1, new Color(90,135,197)},
+        };
+            reverseColorLookup = new Dictionary<Color, int>
+            {   // 0 = black
+                {Color.Black,0},
+                //1 = blue
+                {new Color(90,135,197),1},
+        };
+
+
             texture = new Texture2D(this.GraphicsDevice, 64, 32);
 
             stopwatch = new Stopwatch();
 
+
             spritebatchSW = new Stopwatch();
 
-            Color[] colorData = new Color[64 * 32];
+            colorData = new Color[64 * 32];
             for (int i = 0; i < 64*32; i++)
             {
-                colorData[i] = Color.Red;
+                colorData[i] = Color.Black;
 
             }
             texture.SetData(colorData);
@@ -132,19 +157,26 @@ namespace Graphics
                 {
                     stopwatch.Start();
 
+                    
+                    //instead of clearing the colorData everytime, iterate through the old colorData, changing what needs to be changed
 
-                    Color[] colorData = new Color[64*32];
                     for (int i = 0; i < 64 * 32; i++)
                     {
+                        if (inter.display[i / 64, i % 64] != reverseColorLookup[colorData[i]])
+                        {
+                            colorData[i] = colorLookup[inter.display[i/64, i%64]];
+                        }
 
-                        if (inter.display[i / 64, i % 64] == 1)
-                        {
-                            colorData[i] = new Color(90,135,197);
-                        }
-                        else
-                        {
-                            colorData[i] = Color.Black;
-                        }
+
+                        //OLD DRAW CODE. RESTORE IN CASE OF SNAFU
+                        //if (inter.display[i / 64, i % 64] == 0)
+                        //{
+                        //    colorData[i] = Color.Black;
+                        //}
+                        //else
+                        //{
+                        //    colorData[i] = blue;
+                        //}
 
 
                     }
