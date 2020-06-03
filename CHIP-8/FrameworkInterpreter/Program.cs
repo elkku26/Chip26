@@ -6,7 +6,10 @@ using static RegexDefinitions.RegexDefine;
 
 
 namespace FrameworkInterpreter
-{   
+{
+    /// <summary>
+    ///This is simple class to print out the contents of the screen to the console visually
+    /// </summary>
     public class BasicVisualizer
     {
         public static void Visualize(int[,] arr)
@@ -26,7 +29,6 @@ namespace FrameworkInterpreter
                     {
                         Console.Write("■ ");
                     }
-                    //Console.Write("{0}", arr[i, j]);
                 }
                 Console.Write(Environment.NewLine + Environment.NewLine);
             }
@@ -34,7 +36,13 @@ namespace FrameworkInterpreter
         }
     }
 
-        public class Ugh
+    /// <summary>
+    /// Serves as main if execution starts from program.cs
+    /// mostly useful for debugging purposes, as it prints out 
+    /// a fair bit of data about whatever is going on 
+    /// </summary>
+    
+    public class TextBasedInterpreter
     {
         static void Main()
         {
@@ -47,18 +55,18 @@ namespace FrameworkInterpreter
                 stopwatch.Stop();
 
                 Console.WriteLine($"execution time in ms = {stopwatch.ElapsedMilliseconds}");
-                //Thread.Sleep((int)stopwatch.ElapsedMilliseconds);
+
                 stopwatch.Reset();
             }
 
         }
     }
 
+
     public class Interpreter
     {
-
+        
         public float delayTimer;
-        public int evenCounter;
         public float soundTimer;
         public Stopwatch stopwatch;
         public byte[] memory;
@@ -102,8 +110,8 @@ namespace FrameworkInterpreter
             {
                 memory[i] = fontData[i];
             }
-
-            FileStream fs = new FileStream(@"C:\Users\elias\Desktop\Space Invaders.ch8", FileMode.Open);
+            var currentDir = AppDomain.CurrentDomain.BaseDirectory;
+            FileStream fs = new FileStream(@"C:\Users\elias\Desktop\BC_test.ch8", FileMode.Open);
 
             int hexIn;
 
@@ -122,31 +130,34 @@ namespace FrameworkInterpreter
         //this gets called whenever a key is pressed and it sets the keyPress variable to the ascii code of the key pressed
         public void GetKey(int key)
         {
-            Debug.WriteLine($"Key {key} has been pressed!");
-            keyPress = key;
+            if (key != 0)
+            {
+                Debug.WriteLine($"Key {key} has been pressed!");
+                keyPress = key;
+            }
         }
 
         public Interpreter()
         {
             //define everything
-            this.random = new Random();
-            this.memory = this.LoadData();
+            random = new Random();
+            memory = LoadData();
 
-            this.stopwatch = new Stopwatch();
+            stopwatch = new Stopwatch();
 
 
             // height x width;
-            this.display = new int[32, 64];
+            display = new int[32, 64];
 
-            this.registers = new byte[16];
+            registers = new byte[16];
 
-            this.i = 0;
+            i = 0;
 
-            this.pc = 512;
+            pc = 512;
 
-            this.stack = new List<short>();
+            stack = new List<short>();
 
-            this.drawFlag = false;
+            drawFlag = false;
 
         }
         public void Advance()
@@ -197,7 +208,7 @@ namespace FrameworkInterpreter
                     drawFlag = true;
                     
                     //advance pc
-                    this.pc += 2;
+                    pc += 2;
                     break;
 
                 case "00EE":
@@ -206,11 +217,11 @@ namespace FrameworkInterpreter
                     Console.WriteLine("00EE");
                     
                     //set pc to top of stack
-                    this.pc = stack[stack.Count - 1];
+                    pc = stack[stack.Count - 1];
                     //remove item at top of stack
                   
                     stack.RemoveAt(stack.Count-1);
-                    this.pc += 2;
+                    pc += 2;
                     break;
 
                 case var dummy when One_addr.IsMatch(dummy):
@@ -287,7 +298,6 @@ namespace FrameworkInterpreter
                     Console.WriteLine("8xy0");
                     registers[x] = registers[y];
 
-
                     pc += 2;
                     break;
 
@@ -317,10 +327,9 @@ namespace FrameworkInterpreter
                 case var dummy when Eight_add.IsMatch(dummy):
                     Console.WriteLine("8xy4");
                     
-                    registers[x] = (byte)(registers[x] + registers[y]);
-                    if (registers[x] > 255)
+                    if (registers[x]+registers[y] > 255)
                     {
-                        registers[x] = (byte)(registers[x] & 255);
+                        //registers[x] = (byte)(registers[x] & 255);
                         registers[15] = 1;
                     }
                     else
@@ -328,6 +337,7 @@ namespace FrameworkInterpreter
                         registers[15] = 0;
                     }
 
+                    registers[x] = (byte)(registers[x] + registers[y]);
 
                     pc += 2;
                     break;
@@ -354,7 +364,7 @@ namespace FrameworkInterpreter
                 case var dummy when Eight_shr.IsMatch(dummy):
                     Console.WriteLine("8xy6");
                     
-                    if ((registers[x] & 0x0000FFFF) == 1)
+                    if (registers[x] % 2 == 1)
                     {
                         registers[15] = 1;
                     }
@@ -388,7 +398,7 @@ namespace FrameworkInterpreter
                 case var dummy when Eight_shl.IsMatch(dummy):
                     Console.WriteLine("8xyE");
                     
-                    if (registers[x] >> 7 == 1)
+                    if (registers[x] < 0)
                     {
                         registers[15] = 1;
                     }
@@ -397,7 +407,7 @@ namespace FrameworkInterpreter
                         registers[15] = 0;
                     }
                     pc += 2;
-                    registers[x] = (byte)(registers[x] >> 1);
+                    registers[x] = (byte)(registers[x] << 1);
 
                     break;
 
@@ -486,6 +496,15 @@ namespace FrameworkInterpreter
 
                                 vY_Snapshot = 0;
                             }
+                            if (vY_Snapshot + yOffset <0)
+                            {
+                                //registers[y]:n muuttaminen suoraan nollaksi saattaa olla tyhmää ja aiheuttaa bugeja,
+                                //mielummin pitäisi ottaa registers[y]:n nykyinen versio erilliseen muuttujaan,
+                                //jossa sitä voi muunnella ilman että vaikutetaan rekistereiden tilaan.
+
+                                vY_Snapshot = 31;
+                            }
+                             
 
                             if (vX_Snapshot + xOffSet > 63)
                             {
@@ -493,6 +512,11 @@ namespace FrameworkInterpreter
                                 vX_Snapshot = 0;
                             }
 
+                            if(vX_Snapshot + xOffSet < 0)
+                            {
+                                vX_Snapshot = 63;
+                            }
+                            
 
                             if (display[vY_Snapshot + yOffset, vX_Snapshot + xOffSet] == 1 && stringRepr[xOffSet] == '1')
                             {
@@ -508,7 +532,7 @@ namespace FrameworkInterpreter
                     Console.WriteLine($"draw function elapsed ms = {stopwatch.ElapsedMilliseconds}");
                     stopwatch.Reset();
 
-                    BasicVisualizer.Visualize(display);
+                    //BasicVisualizer.Visualize(display);
 
 
                     drawFlag = true;
@@ -527,6 +551,7 @@ namespace FrameworkInterpreter
                     if (Convert.ToByte(Convert.ToInt16(Convert.ToString(Convert.ToChar(keyPress)), 16)) == registers[x])
                     {
                         pc += 4;
+                        keyPress = 0;
                         break;
                     }
 
@@ -547,6 +572,7 @@ namespace FrameworkInterpreter
                     if (Convert.ToByte(Convert.ToInt16(Convert.ToString(Convert.ToChar(keyPress)), 16)) != registers[x])
                     {
                         pc += 4;
+                        keyPress = 0;
                         break;
                     }
 
@@ -641,7 +667,6 @@ namespace FrameworkInterpreter
                     for (int iter = 0; iter<=x; iter++)
                     {
                         registers[iter] = memory[i+iter];
-                        evenCounter += 2;
                     }
                     
 
