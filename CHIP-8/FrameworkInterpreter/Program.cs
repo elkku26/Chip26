@@ -111,7 +111,7 @@ namespace FrameworkInterpreter
                 memory[i] = fontData[i];
             }
             var currentDir = AppDomain.CurrentDomain.BaseDirectory;
-            FileStream fs = new FileStream(@"C:\Users\elias\Desktop\BC_test.ch8", FileMode.Open);
+            FileStream fs = new FileStream(@"C:\Users\elias\Desktop\BRIX.ch8", FileMode.Open);
 
             int hexIn;
 
@@ -490,26 +490,18 @@ namespace FrameworkInterpreter
                         {
                             if (vY_Snapshot + yOffset > 31)
                             {
-                                //registers[y]:n muuttaminen suoraan nollaksi saattaa olla tyhmää ja aiheuttaa bugeja,
-                                //mielummin pitäisi ottaa registers[y]:n nykyinen versio erilliseen muuttujaan,
-                                //jossa sitä voi muunnella ilman että vaikutetaan rekistereiden tilaan.
-
-                                vY_Snapshot = 0;
+                                vY_Snapshot = 0 - yOffset;
                             }
-                            if (vY_Snapshot + yOffset <0)
+                            
+                            if (vY_Snapshot + yOffset < 0)
                             {
-                                //registers[y]:n muuttaminen suoraan nollaksi saattaa olla tyhmää ja aiheuttaa bugeja,
-                                //mielummin pitäisi ottaa registers[y]:n nykyinen versio erilliseen muuttujaan,
-                                //jossa sitä voi muunnella ilman että vaikutetaan rekistereiden tilaan.
-
-                                vY_Snapshot = 31;
+                               vY_Snapshot = 31 - yOffset;
                             }
                              
 
                             if (vX_Snapshot + xOffSet > 63)
                             {
-                                //sama kuin äsköinen
-                                vX_Snapshot = 0;
+                                vX_Snapshot = 0-xOffSet;
                             }
 
                             if(vX_Snapshot + xOffSet < 0)
@@ -524,7 +516,7 @@ namespace FrameworkInterpreter
                                 registers[15] = 1;
                             }
 
-                            //kirjoitetaan data display-arrayyn.
+                            //kirjoitetaan data display-arrayhyn.
                             display[vY_Snapshot + yOffset, vX_Snapshot + xOffSet] ^= (int)Char.GetNumericValue(stringRepr[xOffSet]);
                         }
                     }
