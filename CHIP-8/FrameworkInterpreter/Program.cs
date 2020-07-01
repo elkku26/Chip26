@@ -4,49 +4,31 @@ using System.IO;
 using System.Diagnostics;
 using static RegexDefinitions.RegexDefine;
 
-
 namespace FrameworkInterpreter
 {
-    /// <summary>
-    ///This is simple class to print out the contents of the screen to the console visually
-    /// </summary>
-    public class BasicVisualizer
-    {
-        public static void Visualize(int[,] arr)
-        {
-            int rowLength = arr.GetLength(0);
-            int colLength = arr.GetLength(1);
 
-            for (int i = 0; i < rowLength; i++)
-            {
-                for (int j = 0; j < colLength; j++)
-                {
-                    if (arr[i,j] == 0)
-                    {
-                        Console.Write("  ");
-                    }
-                    else
-                    {
-                        Console.Write("■ ");
-                    }
-                }
-                Console.Write(Environment.NewLine + Environment.NewLine);
-            }
-        
-        }
-    }
+    #region TextInterpreter
 
     /// <summary>
     /// Serves as main if execution starts from program.cs
     /// mostly useful for debugging purposes, as it prints out 
     /// a fair bit of data about whatever is going on 
     /// </summary>
-    
+
     public class TextBasedInterpreter
     {
-        static void Main()
+        static void Main(string[] args)
         {
-            Interpreter intr = new Interpreter();
+            Interpreter intr;
+
+            if (args.Length != 0)
+            {
+                intr = new Interpreter(args[0]);
+            }
+            else
+            {
+                intr = new Interpreter(@"C:\Users\elias\Desktop\c8_test.ch8");
+            }
             Stopwatch stopwatch = new Stopwatch();
             while (true)
             {
@@ -61,8 +43,14 @@ namespace FrameworkInterpreter
 
         }
     }
+    #endregion
 
 
+
+    /// <summary>
+    /// Most important class of the program, this is the interpreter itself and it's responsible for the parsing
+    /// and evaluation of code
+    /// </summary>
     public class Interpreter
     {
         
@@ -70,20 +58,25 @@ namespace FrameworkInterpreter
         public float soundTimer;
         public Stopwatch stopwatch;
         public byte[] memory;
-        public int[,] display;
+        public int[] display;
         public byte[] registers;
         public short i;
         public short pc;
         public List<short> stack;
         public bool drawFlag;
         public Random random;
-        public int x;
-        public int y;
-        int n;
-        int vX_Snapshot;
-        int vY_Snapshot;
-        int keyPress;
+        public short x;
+        public short y;
+        public short n;
+        public short kk;
+        public string rom;
+        public short nnn;
+        public string currentInstruction;
+        public int vX_Snapshot;
+        public int vY_Snapshot;
+        public int keyPress;
         public int vxIndex;
+        public bool legacyMode = false;
         public int vyIndex;
         public byte[] fontData = new byte[] { 0xF0, 0x90, 0x90, 0x90, 0xF0,
                                               0x20, 0x60, 0x20, 0x20, 0x70,
@@ -102,6 +95,35 @@ namespace FrameworkInterpreter
                                               0xF0, 0x80, 0xF0, 0x80, 0xF0,
                                               0xF0, 0x80, 0xF0, 0x80, 0x80 };
 
+        public Interpreter(string rom= @"C:\Users\elias\Desktop\Clock Program [Bill Fisher, 1981].ch8")
+        {
+            this.rom = rom;
+
+            //define everything
+            random = new Random();
+            memory = LoadData();
+
+            stopwatch = new Stopwatch();
+
+            // height x width;
+            display = new int[32 * 64];
+
+
+            registers = new byte[16];
+
+            i = 0;
+
+            pc = 512;
+
+            stack = new List<short>();
+
+            drawFlag = false;
+
+
+            //legacyMode = true;
+
+        }
+
         public byte[] LoadData()
         {
             byte[] memory = new byte[4096];
@@ -110,8 +132,9 @@ namespace FrameworkInterpreter
             {
                 memory[i] = fontData[i];
             }
+
             var currentDir = AppDomain.CurrentDomain.BaseDirectory;
-            FileStream fs = new FileStream(@"C:\Users\elias\Desktop\BRIX.ch8", FileMode.Open);
+            FileStream fs = new FileStream(this.rom, FileMode.Open);
 
             int hexIn;
 
@@ -119,8 +142,6 @@ namespace FrameworkInterpreter
             {
                 memory[i + 512] = (byte)hexIn;
             }
-
-
 
             return memory;
 
@@ -135,59 +156,44 @@ namespace FrameworkInterpreter
                 Debug.WriteLine($"Key {key} has been pressed!");
                 keyPress = key;
             }
-        }
-
-        public Interpreter()
-        {
-            //define everything
-            random = new Random();
-            memory = LoadData();
-
-            stopwatch = new Stopwatch();
-
-
-            // height x width;
-            display = new int[32, 64];
-
-            registers = new byte[16];
-
-            i = 0;
-
-            pc = 512;
-
-            stack = new List<short>();
-
-            drawFlag = false;
 
         }
+
+
         public void Advance()
         {
             //advance the program by one cycle
 
 
             //check if reached end of memory;
-            if (pc + 2 == memory.Length)
+            if (pc + 2 >= memory.Length)
             {
                 Console.WriteLine("ERR: reached end of memory");
                 return;
             }
 
             //parse current instruction and set it to a variable
-            string currentInstruction = String.Format("{0:X2}", memory[pc]) + String.Format("{0:X2}", memory[pc + 1]);
+            currentInstruction = String.Format("{0:X2}", memory[pc]) + String.Format("{0:X2}", memory[pc + 1]);
+
+
 
             //parse x
-            x = Convert.ToInt32(Convert.ToString(currentInstruction[1]),16);
+            x = Convert.ToInt16(Convert.ToString(currentInstruction[1]),16);
 
             //parsy y
-            y = Convert.ToInt32(Convert.ToString(currentInstruction[2]), 16);
+            y = Convert.ToInt16(Convert.ToString(currentInstruction[2]), 16);
 
             //parse n
-            n = Convert.ToInt32(Convert.ToString(currentInstruction[3]), 16);
+            n = Convert.ToInt16(Convert.ToString(currentInstruction[3]), 16);
+
+            //parse kk
+            kk = Convert.ToInt16(currentInstruction.Substring(2), 16);
+
+            //parse nnn
+            nnn = Convert.ToInt16(currentInstruction.Substring(1), 16);
 
 
-
-            
-            Console.WriteLine($"pc={pc}");
+            Console.WriteLine($"\npc={pc}");
             Console.WriteLine($"The current instruction is:{currentInstruction} ");
 
 
@@ -196,253 +202,161 @@ namespace FrameworkInterpreter
             drawFlag = false;
 
             //switch for all possible instructions
+            //TODO: replace this
             switch (currentInstruction)
             {
                 case "00E0":
                     Console.WriteLine("00E0");
-                    
-                    //reset display
-                    display = new int[32, 64];
-                    
-                    //set drawFlag so monogame knows to redraw the screen
-                    drawFlag = true;
-                    
-                    //advance pc
-                    pc += 2;
-                    break;
+
+                    Instructions.clr(this);
+                    return;
+
 
                 case "00EE":
-                    //return
 
                     Console.WriteLine("00EE");
-                    
-                    //set pc to top of stack
-                    pc = stack[stack.Count - 1];
-                    //remove item at top of stack
-                  
-                    stack.RemoveAt(stack.Count-1);
-                    pc += 2;
-                    break;
+                    Instructions.ret(this);
+                    return;
+
 
                 case var dummy when One_addr.IsMatch(dummy):
                     Console.WriteLine("1nnn");
+                    Instructions.jmp(this);
                    
-                    //set pc to nnn
-                    pc = Convert.ToInt16(currentInstruction.Substring(1, 3), 16);
-                    Console.WriteLine($"pc = {pc}");
-                    break;
+                    return;
+
 
                 case var dummy when Two_addr.IsMatch(dummy):
                     Console.WriteLine("2nnn");
-                    
-                    //add current instruction to top of stack
-                    stack.Add(pc);
+                    Instructions.call(this);
 
-                    //jump to nnn
-                    pc = Convert.ToInt16(currentInstruction.Substring(1, 3), 16);
-                    break;
+                    return;
+
 
                 case var dummy when Three.IsMatch(dummy):
                     Console.WriteLine("3xkk");
+                    Instructions.skp_if_kk(this);
                     
-                    //jump one if vX is kk
-                    if (registers[x] == (byte)Convert.ToInt32(currentInstruction.Substring(2, 2), 16))
-                    {
-                        pc += 4;
-                        break;
-                    }
-                    pc += 2;
-                    break;
+                    return;
+
 
                 case var dummy when Four.IsMatch(dummy):
                     Console.WriteLine("4xkk");
-                    if ((byte)Convert.ToInt32(currentInstruction.Substring(2, 2), 16) != registers[x])
-                    {
-                        pc += 4;
-                        break;
-                    }
+                    Instructions.skp_not_kk(this);
+                    
+                    return;
 
-
-                    pc += 2;
-                    break;
 
                 case var dummy when Five.IsMatch(dummy):
                     Console.WriteLine("5xy0");
+                    Instructions.skp_if_x_y(this);
 
-                    if (registers[x] == registers[y])
-                    {
-                        pc += 4;
-                        break;
-                    }
+                    return;
 
-                    pc += 2;
-                    break;
 
                 case var dummy when Six.IsMatch(dummy):
                     Console.WriteLine("6xkk");
-                    registers[x] = (byte)Convert.ToInt32(currentInstruction.Substring(2, 2), 16);
-
-                    pc += 2;
-                    break;
+                    Instructions.ld_vx_kk(this);
+                    
+                    return;
 
 
                 case var dummy when Seven.IsMatch(dummy):
                     Console.WriteLine("7xkk");
-                    registers[x] += (byte)Convert.ToInt32(currentInstruction.Substring(2, 2), 16);
-
-                    pc += 2;
-                    break;
+                    Instructions.add_vx_kk(this);
+                    
+                    return;
 
 
                 case var dummy when Eight_load.IsMatch(dummy):
                     Console.WriteLine("8xy0");
-                    registers[x] = registers[y];
+                    Instructions.ld_vx_vy(this);
 
-                    pc += 2;
-                    break;
+                    return;
+
 
                 case var dummy when Eight_or.IsMatch(dummy):
                     Console.WriteLine("8xy1");
-                    registers[x] = (byte)(registers[x] | registers[y]);
+                    Instructions.or_vx_vy(this);
+                    
+                    return;
 
-                    pc += 2;
-                    break;
 
                 case var dummy when Eight_and.IsMatch(dummy):
                     Console.WriteLine("8xy2");
-                    registers[x] = (byte)(registers[x] & registers[y]);
+                    Instructions.and_vx_vy(this);
 
+                    return;
 
-                    pc += 2;
-                    break;
 
                 case var dummy when Eight_xor.IsMatch(dummy):
                     Console.WriteLine("8xy3");
-                    registers[x] = (byte)(registers[x] ^ registers[y]);
+                    Instructions.xor_vx_vy(this);
 
+                    return;
 
-                    pc += 2;
-                    break;
 
                 case var dummy when Eight_add.IsMatch(dummy):
                     Console.WriteLine("8xy4");
-                    
-                    if (registers[x]+registers[y] > 255)
-                    {
-                        //registers[x] = (byte)(registers[x] & 255);
-                        registers[15] = 1;
-                    }
-                    else
-                    {
-                        registers[15] = 0;
-                    }
+                    Instructions.add_vx_vy(this);
 
-                    registers[x] = (byte)(registers[x] + registers[y]);
+                    return;
 
-                    pc += 2;
-                    break;
 
                 case var dummy when Eight_sub.IsMatch(dummy):
                     Console.WriteLine("8xy5");
-                    
-                    if (registers[x] > registers[y])
-                    {
-                        registers[15] = 1;
-                    }
-                    else
-                    {
-                        registers[15] = 0;
-                    }
-                    registers[x] = (byte)(registers[x] - registers[y]);
+                    Instructions.sub_vx_vy(this);
 
+                    return;
 
-
-
-                    pc += 2;
-                    break;
 
                 case var dummy when Eight_shr.IsMatch(dummy):
                     Console.WriteLine("8xy6");
-                    
-                    if (registers[x] % 2 == 1)
-                    {
-                        registers[15] = 1;
-                    }
-                    else
-                    {
-                        registers[15] = 0;
-                    }
-                    registers[x] = (byte)(registers[x] >> 1);
-                    pc += 2;
-                    break;
+                    Instructions.shr_vx_vy(this);
+                
+                    return;
 
 
                 case var dummy when Eight_subn.IsMatch(dummy):
                     Console.WriteLine("8xy7");
+                    Instructions.subn_vy_vx(this);
                     
-                    if (registers[y] > registers[x])
-                    {
-                        registers[15] = 1;
-                    }
-                    else
-                    {
-                        registers[15] = 0;
-                    }
+                    return;
 
-                    registers[x] = (byte)(registers[y] - registers[x]);
-
-
-                    pc += 2;
-                    break;
 
                 case var dummy when Eight_shl.IsMatch(dummy):
                     Console.WriteLine("8xyE");
+                    Instructions.shl_vx_vy(this);
                     
-                    if (registers[x] < 0)
-                    {
-                        registers[15] = 1;
-                    }
-                    else
-                    {
-                        registers[15] = 0;
-                    }
-                    pc += 2;
-                    registers[x] = (byte)(registers[x] << 1);
-
-                    break;
+                    return;
 
 
                 case var dummy when Nine.IsMatch(dummy):
                     Console.WriteLine("9xy0");
-
-                    if (registers[x] != registers[y])
-                    {
-                        pc += 4;
-                        break;
-                    }
-
-                    pc += 2;
-                    break;
+                    Instructions.skp_not_equal(this);
+                    
+                    return;
 
 
                 case var dummy when A_addr.IsMatch(dummy):
                     Console.WriteLine($"Annn where nnn = {currentInstruction.Substring(1, 3)}");
-                    i = Convert.ToInt16(currentInstruction.Substring(1, 3), 16);
-                    Console.WriteLine($"i = {i}");
-                    pc += 2;
-                    break;
+                    Instructions.ld_i_nnn(this);
+
+                    return;
 
 
                 case var dummy when B_addr.IsMatch(dummy):
                     Console.WriteLine("Bnnn");
-                    pc = (short)(Convert.ToInt16(currentInstruction.Substring(1, 3), 16) + registers[0]);
-                    break;
+                    Instructions.jmp_v0_nnn(this);
+                    
+                    return;
+
 
                 case var dummy when C_addr.IsMatch(dummy):
                     Console.WriteLine("Cxkk");
-                    registers[x] = (byte) (random.Next(255) & Convert.ToInt32(currentInstruction.Substring(2, 2), 16));
-                    pc += 2;
-                    break;
+                    Instructions.ld_vx_rand(this);
+                    
+                    return;
 
 
                 #region draw_func
@@ -457,229 +371,112 @@ namespace FrameworkInterpreter
 
                     Console.WriteLine("Dxyn");
 
-                    vY_Snapshot = registers[y];
-                    vX_Snapshot = registers[x];
+                    Instructions.drw(this);
 
-                    //oletusarvo on ettei collisionia tapahdu, jolloin Vx = 0
-                    registers[15] = 0;
-
-                    //initialisoidaan byte array joka sisältää piirrettävät arvot
-                    byte[] toDraw = new byte[n];
-
-
-                    //täytetään toDraw (mahdollista ohittaa tämä vaihe?)
-                    for (int verticalRow = 0; verticalRow < n; verticalRow++)
-                    {
-                        toDraw[verticalRow] = memory[i + verticalRow];
-                    }
-
-
-                    //siirretään toDraw display arrayhin
-
-                    // jokaista riviä y + yOffSet kohden
-                    for (int yOffset = 0; yOffset < toDraw.Length; yOffset++)
-                    {
-
-                        //muunnetaan rivi binaariksi ja otetaan sen string representaatio
-                        string stringRepr = Convert.ToString(toDraw[yOffset], 2).PadLeft(8, '0');
-                        
-
-                        //tarkistetaan, mennäänkö näytön reunan yli (mahd. väärin?)
-
-                        for (int xOffSet = 0; xOffSet < stringRepr.Length; xOffSet++)
-                        {
-                            if (vY_Snapshot + yOffset > 31)
-                            {
-                                vY_Snapshot = 0 - yOffset;
-                            }
-                            
-                            if (vY_Snapshot + yOffset < 0)
-                            {
-                               vY_Snapshot = 31 - yOffset;
-                            }
-                             
-
-                            if (vX_Snapshot + xOffSet > 63)
-                            {
-                                vX_Snapshot = 0-xOffSet;
-                            }
-
-                            if(vX_Snapshot + xOffSet < 0)
-                            {
-                                vX_Snapshot = 63;
-                            }
-                            
-
-                            if (display[vY_Snapshot + yOffset, vX_Snapshot + xOffSet] == 1 && stringRepr[xOffSet] == '1')
-                            {
-                                // katsotaan tapahtuuko kolliisiota, jos näin niin Vx on 1;
-                                registers[15] = 1;
-                            }
-
-                            //kirjoitetaan data display-arrayhyn.
-                            display[vY_Snapshot + yOffset, vX_Snapshot + xOffSet] ^= (int)Char.GetNumericValue(stringRepr[xOffSet]);
-                        }
-                    }
                     stopwatch.Stop();
                     Console.WriteLine($"draw function elapsed ms = {stopwatch.ElapsedMilliseconds}");
                     stopwatch.Reset();
 
-                    //BasicVisualizer.Visualize(display);
 
-
-                    drawFlag = true;
-                    pc += 2;
                     break;
                 #endregion
 
                 case var dummy when E_skp.IsMatch(dummy):
                     Console.WriteLine("Ex9E");
-                    if (keyPress == 0)
-                    {
-                        pc += 2;
-                        break;
-                    }
+                    Instructions.skp_vx(this);
 
-                    if (Convert.ToByte(Convert.ToInt16(Convert.ToString(Convert.ToChar(keyPress)), 16)) == registers[x])
-                    {
-                        pc += 4;
-                        keyPress = 0;
-                        break;
-                    }
-
-                    pc += 2;
-                    keyPress = 0;
-                    break;
+                    return;
 
 
                 case var dummy when E_sknp.IsMatch(dummy):
                     Console.WriteLine("ExA1");
 
-                    if (keyPress == 0)
-                    {
-                        pc += 2;
-                        break;
-                    }
+                    Instructions.sknp_vx(this);
 
-                    if (Convert.ToByte(Convert.ToInt16(Convert.ToString(Convert.ToChar(keyPress)), 16)) != registers[x])
-                    {
-                        pc += 4;
-                        keyPress = 0;
-                        break;
-                    }
-
-                    pc += 2;
-                    keyPress = 0;
-                    break;
+                    return;
 
 
                 case var dummy when F_load_from_dt.IsMatch(dummy):
                     Console.WriteLine("Fx07");
-                    registers[x] = (byte)Convert.ToInt32(delayTimer);
+
+                    Instructions.ld_vx_dt(this);
+                    
                     Debug.WriteLine($"registers[{x}] = {registers[x]}");
-                    pc += 2;
-                    break;
+                    
+                    return;
 
 
                 case var dummy when F_load_key.IsMatch(dummy):
                     Console.WriteLine("Fx0A");
-                    
-                    //maybe try while here?
-                    if (keyPress == 0)
-                    {
-                        break;
-                    }
-                    Debug.WriteLine("Keypress: {0},  keypress type: {1}", keyPress, keyPress.GetType());
-                    registers[x] = (byte) Convert.ToInt16(Convert.ToString( (char) keyPress),16);
 
-                    Debug.WriteLine($"registers[x] = {registers[x]}");
-                    pc += 2;
+                    Instructions.ld_vx_key(this);
 
-                    keyPress = 0;
-                    break;
+                    return;
 
 
                 case var dummy when F_load_to_dt.IsMatch(dummy):
                     Console.WriteLine("Fx15");
-                    delayTimer = registers[x];
+
+                    Instructions.ld_dt_vx(this);
+
                     Debug.WriteLine($"delayTimer has been set to {delayTimer}");
-                    pc += 2;
-                    break;
+
+                    return;
 
 
                 case var dummy when F_load_to_st.IsMatch(dummy):
-
                     Console.WriteLine("Fx18");
-                    soundTimer = registers[x];
-                    pc += 2;
-                    break;
+
+                    Instructions.ld_st_vx(this);
+
+                    return;
 
                 case var dummy when Add_i_vx.IsMatch(dummy):
                     Console.WriteLine("Fx1E");
-                    i += registers[x];
-                    pc += 2;
-                    break;
+
+                    Instructions.add_i_vx(this);
+
+                    return;
 
 
                 case var dummy when Load_f_vx.IsMatch(dummy):
                     Console.WriteLine("Fx29");
-                    i = (short)(registers[x] * 5);
-                    pc += 2;
-                    break;
+                    Instructions.ld_f_vx(this);
+          
+                    return;
 
 
                 case var dummy when Load_b_vx.IsMatch(dummy):
                     Console.WriteLine("Fx33");
 
-                    //The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2.
+                    Instructions.ld_bcd(this);
 
-                        memory[i + 2] = (byte)(registers[x] % 10);
-                        memory[i + 1] = (byte)((registers[x] % 100 - memory[i + 2])/10);
-                        memory[i] = (byte)((registers[x] - memory[i + 2] - memory[i + 1]*10) / 100);
-
-
-
-
-                    pc += 2;
-                    break;
+                    return;
 
                 case var dummy when Load_i_vx.IsMatch(dummy):
                     Console.WriteLine("Fx55");
-                    for (int iter = 0; iter <= x; iter++)
-                    {
-                        memory[i + iter] = registers[iter];
-                    }
-                    pc += 2;
-                    break;
+
+                    Instructions.ld_i_vx(this);
+
+                    return;
 
                 case var dummy when Load_vx_i.IsMatch(dummy):
                     Console.WriteLine("Fx65");
-                    //lataa muistiosoitteesta I alkaen arvot rekistereihin
 
-                    for (int iter = 0; iter<=x; iter++)
-                    {
-                        registers[iter] = memory[i+iter];
-                    }
-                    
+                    Instructions.ld_vx_i(this);
 
-                    pc += 2;
-                    break;
+                    return;
 
 
                 default:
                     Console.WriteLine("Unknown instruction");
                     pc += 2;
-                    break;
+                    return;
 
 
             }
-
         }
-
     }        
-        }
-
-
-
+}
 
 
