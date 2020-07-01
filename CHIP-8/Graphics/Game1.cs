@@ -15,20 +15,18 @@ namespace Graphics
     /// 
     public class Game1 : Game
     {
-        const float hertz60 = 0.016666F;
+        const float hertz60 = 0.01666666666F;
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Texture2D texture;
         Vector2 position;
         Vector2 scale;
         Interpreter inter;
-        Stopwatch updateLoop;
+        Stopwatch updateLoopTimer;
         Stopwatch stopwatch;
         Keys[] keys;
-        Color blue;
-        Color[] emptyColors;
+         //Keys prevKeyPress;
         Color[] colorData;
-        Color[] previousColors;
         Stopwatch spritebatchSW;
         Dictionary<int, Color> colorLookup;
         Dictionary<Color, int> reverseColorLookup;
@@ -39,21 +37,32 @@ namespace Graphics
         
         
 
-        public Game1()
+        public Game1(string[] args)
         {
-            this.Window.Title = "CHIP-8";
-            inter = new Interpreter();
-
-            blue = new Color(90, 135, 197);
+            if (args.Length != 0)
+            {
+                inter = new Interpreter(args[0]);
+            }
+            else
+            {
+                inter = new Interpreter(@"C:\Users\elias\Desktop\Space Invaders.ch8");
+            }
 
             KeyPressed += inter.GetKey;
 
             graphics = new GraphicsDeviceManager(this);
 
-            updateLoop = new Stopwatch();
+            updateLoopTimer = new Stopwatch();
 
             graphics.PreferredBackBufferWidth = 640;
             graphics.PreferredBackBufferHeight = 320;
+
+            //disable vsync
+            graphics.SynchronizeWithVerticalRetrace = false;
+
+            //enable variable time step
+            IsFixedTimeStep = false;
+
             Content.RootDirectory = "Content";
             position = new Vector2(0, 0);
             scale = new Vector2(10, 10);
@@ -67,33 +76,45 @@ namespace Graphics
         /// </summary>
         protected override void Initialize()
         {
+            //initialise color lookup tables, these are used to set the colors used by the emulator
             colorLookup = new Dictionary<int, Color>
             {   // 0 = black
-                {0, new Color(0,0,0)},
-                //1 = blue
-                {1, new Color(90,135,197)},
+                {0, Color.Black},
+                //1 = white
+                {1, Color.White},
         };
             reverseColorLookup = new Dictionary<Color, int>
-            {   // 0 = black
+            {   // black = 0
                 {Color.Black,0},
-                //1 = blue
-                {new Color(90,135,197),1},
+                //white = 1
+                {Color.White,1},
         };
 
+            //create the main texture onto which the display is drawn
+            texture = new Texture2D(GraphicsDevice, 64, 32);
 
-            texture = new Texture2D(this.GraphicsDevice, 64, 32);
-
+            //this stopwatch is used both for timers and performance measuring
             stopwatch = new Stopwatch();
 
+            //set the title of the window
+            Window.Title = "CHIP-8";
 
             spritebatchSW = new Stopwatch();
-
+            
+            //create the color array, the texture is manipulated by changing the colors of this array
             colorData = new Color[64 * 32];
+
+            //draw it white by default, useful in debugging purposes as if the screen is entirely white, 
+            //you know no draw calls have been issued
             for (int i = 0; i < 64*32; i++)
             {
-                colorData[i] = Color.Black;
-
+                colorData[i] = Color.White;
             }
+
+
+            
+
+            //set the colordata to the texture
             texture.SetData(colorData);
             base.Initialize();
         }
@@ -122,6 +143,74 @@ namespace Graphics
             // TODO: Unload any non ContentManager content here
         }
 
+
+        /// <summary>
+        /// CheckForKeyPress will be called once every frame and it notifies the interpreter about any
+        /// possible keys that have been pressed
+        /// </summary>
+        protected void CheckForKeyPress()
+        {
+            keys = Keyboard.GetState().GetPressedKeys();
+
+            //if any keys have been pressed
+            if (keys.Length > 0)
+            {
+                //if the key is not the same as the previous key
+                //if (keys[0] != prevKeyPress)
+                //{
+                    //prevKeyPress = keys[0];
+                    Debug.WriteLine($"{keys[0]} registered in game1.cs");
+                    OnKeyPressed(Convert.ToInt32(keys[0]));
+                }
+                //else
+                //{
+                  //  OnKeyPressed(0);
+                //}
+            //}
+            //else
+            //{
+            //    prevKeyPress = 0;
+            //}
+        }
+
+        /// <summary>
+        ///  DrawTextureArray draws the wanted content to the texture as colorData
+        /// </summary>
+        protected void DrawTextureArray()
+        {
+            //instead of clearing the colorData everytime, iterate through the old colorData, 
+            //changing what needs to be changed
+
+            //note: probably still has much room for improvement
+
+            stopwatch.Start();
+
+            for (int i = 0; i < 2048; i++)
+            {
+                if (inter.display[i] != reverseColorLookup[colorData[i]])
+                {
+                    colorData[i] = colorLookup[inter.display[i]];
+                }
+
+            }
+            stopwatch.Stop();
+
+            Debug.WriteLine($"Populating the texture took: {stopwatch.ElapsedMilliseconds}ms");
+
+            stopwatch.Reset();
+
+            stopwatch.Start();
+
+            texture.SetData(colorData);
+
+            stopwatch.Stop();
+
+            Console.WriteLine($"texture.SetData took {stopwatch.Elapsed.Milliseconds}");
+
+
+
+        }
+
         /// <summary>
         /// Allows the game to run logic such as updating the world,
         /// checking for collisions, gathering input, and playing audio.
@@ -129,71 +218,83 @@ namespace Graphics
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            updateLoop.Start();
-
-            keys = Keyboard.GetState().GetPressedKeys();
-
-            if (keys.Length > 0 && Convert.ToInt32(keys[0]) != 0)
-            {
-                Debug.WriteLine(keys[0]);
-                OnKeyPressed(Convert.ToInt32(keys[0]));
-            }
+            //timer for measuring performance & implementing the clocks
+            updateLoopTimer.Start();
 
             if (IsActive)
             {
+                //start stopwatch to measure performance of the interpreter step method
                 stopwatch.Start();
 
+                //step the interpreter
                 inter.Advance();
 
                 stopwatch.Stop();
-
-                Debug.WriteLine($"interpreter advance execution time {stopwatch.ElapsedMilliseconds}");
+                
+                Debug.WriteLine($"Interpreter advance execution time {stopwatch.ElapsedMilliseconds}ms");
 
                 stopwatch.Reset();
 
-    
+                //check for any keys being pressed
+                CheckForKeyPress();
 
+
+                //if the drawglag is set, 
                 if (inter.drawFlag)
                 {
                     stopwatch.Start();
 
-                    
-                    //instead of clearing the colorData everytime, iterate through the old colorData, changing what needs to be changed
-
-                    for (int i = 0; i < 64 * 32; i++)
-                    {
-                        if (inter.display[i / 64, i % 64] != reverseColorLookup[colorData[i]])
-                        {
-                            colorData[i] = colorLookup[inter.display[i/64, i%64]];
-                        }
+                    DrawTextureArray();
 
 
-                        //OLD DRAW CODE. RESTORE IN CASE OF SNAFU
-                        //if (inter.display[i / 64, i % 64] == 0)
-                        //{
-                        //    colorData[i] = Color.Black;
-                        //}
-                        //else
-                        //{
-                        //    colorData[i] = blue;
-                        //}
-
-
-                    }
-                    texture.SetData(colorData);
-                    stopwatch.Stop();
-                    Debug.WriteLine($"populating the texture took: {stopwatch.ElapsedMilliseconds}ms");
-                    stopwatch.Reset();
 
                 }
-       
+
+                //decrement delay timer
+
+                //sometimes the program may be stuck in an infinite loop of instructions that take
+                //less than 1ms to execute, thus making the delaytimer unable to decrement
+                //and causing issues
+
+                //if (updateLoopTimer.Elapsed.TotalMilliseconds == 0)
+                //{
+                //if the timer rounds the stopwatch time to zero, decrease the 
+                //timer by 0.1 ms to avoid infinite loops
+                //    inter.delayTimer -= (float)0.5;
+                //}
+
+                inter.delayTimer -= (float)(0.134 * updateLoopTimer.Elapsed.TotalMilliseconds);
+                //inter.delayTimer -= 0.0024f;
+
+                if (inter.delayTimer < 0)
+                {
+                    inter.delayTimer = 0;
+                }
+
+                Console.WriteLine($"updateLoopTimer.ElapsedMilliseconds: {updateLoopTimer.ElapsedMilliseconds}");
+
+                Console.WriteLine($"delaytimer={inter.delayTimer}");
+
+                //If user presses Esc, exit
                 if (GamePad.GetState(PlayerIndex.One).Buttons.Back ==
                   ButtonState.Pressed || Keyboard.GetState().IsKeyDown(
                   Keys.Escape))
                     Exit();
 
+                //measure amt of time taken by base.Update 
+                stopwatch.Start();
 
                 base.Update(gameTime);
+                
+                stopwatch.Stop();
+                
+                Console.WriteLine($"base.Update(gametime) took {stopwatch.ElapsedMilliseconds} ms");
+                
+                stopwatch.Reset();
+
+                updateLoopTimer.Stop();
+                Console.WriteLine($"updateLoopTimer.Elapsed.TotalMilliseconds: {updateLoopTimer.Elapsed.TotalMilliseconds}");
+                updateLoopTimer.Reset();
 
             }
         }
@@ -204,28 +305,24 @@ namespace Graphics
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Black);
+            stopwatch.Start();
 
             spriteBatch.Begin(samplerState:SamplerState.PointClamp);
-            spritebatchSW.Start();
+            
             spriteBatch.Draw(texture: texture, position: position, scale: scale);
-            spritebatchSW.Stop();
-            Debug.WriteLine($"spritebatch.Draw() took {spritebatchSW.ElapsedMilliseconds}");
-            spritebatchSW.Reset();
+            
             spriteBatch.End();
+
+            stopwatch.Stop();
+            Debug.WriteLine($"spritebatch.Begin() and spritebatch.Draw() took {stopwatch.Elapsed.TotalMilliseconds}");
+            stopwatch.Reset();
+
+            stopwatch.Start();           
             base.Draw(gameTime);
-            updateLoop.Stop();
-            Console.WriteLine($"updateLoop.ElapsedMilliseconds: {updateLoop.ElapsedMilliseconds}");
-            //delayTimer decrements 60 times per second
-            inter.delayTimer -= 1000 * hertz60 - updateLoop.ElapsedMilliseconds;
-            if (inter.delayTimer < 0)
-            {
-                inter.delayTimer = 0;
-            }
+            stopwatch.Stop();
+            Debug.WriteLine($"base.Draw(gameTime) took {stopwatch.Elapsed.TotalMilliseconds}ms to execute");
 
-            Console.WriteLine($"delaytimer={inter.delayTimer}");
-
-            updateLoop.Reset();
+            //updateLoopTimer.Reset();
 
         }
 
