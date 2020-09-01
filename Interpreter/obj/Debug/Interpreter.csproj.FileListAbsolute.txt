@@ -1,0 +1,5 @@
+C:\Users\elias\source\repos\Chip26\Interpreter\bin\Debug\Interpreter.dll
+C:\Users\elias\source\repos\Chip26\Interpreter\bin\Debug\Interpreter.pdb
+C:\Users\elias\source\repos\Chip26\Interpreter\obj\Debug\Interpreter.csproj.CoreCompileInputs.cache
+C:\Users\elias\source\repos\Chip26\Interpreter\obj\Debug\Interpreter.dll
+C:\Users\elias\source\repos\Chip26\Interpreter\obj\Debug\Interpreter.pdb
