@@ -1,6 +1,6 @@
-# chip8emu
+# Chip26
 
-How-To
+How-To\n
 Download the roms you want to use
 Go to Program.cs in FrameworkInterpreter and change line 106 to the path of the rom you want.
 Run Game1.cs in Graphics. (if you run it in Debug mode, the game window will be very unresponsive, but the game itself will work. In Release mode, the window will mostly behave like any other window.)
