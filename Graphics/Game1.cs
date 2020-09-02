@@ -286,7 +286,6 @@ namespace Graphics
             
             //timer for measuring performance & implementing the clocks
             updateLoopTimer.Start();
-            Thread.Sleep(slowDownMultiplier);
 
             if (IsActive)
             {
@@ -345,6 +344,9 @@ namespace Graphics
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+
+            Thread.Sleep(slowDownMultiplier);
+
             perfMeasureSW.Start();
 
             spriteBatch.Begin(samplerState:SamplerState.PointClamp);

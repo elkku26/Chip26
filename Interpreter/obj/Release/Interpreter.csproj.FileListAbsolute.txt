@@ -9,3 +9,4 @@ C:\Users\elias\Documents\Chip26\Interpreter\bin\Release\Interpreter.pdb
 C:\Users\elias\Documents\Chip26\Interpreter\obj\Release\Interpreter.csproj.CoreCompileInputs.cache
 C:\Users\elias\Documents\Chip26\Interpreter\obj\Release\Interpreter.dll
 C:\Users\elias\Documents\Chip26\Interpreter\obj\Release\Interpreter.pdb
+C:\Users\elias\Documents\Chip26\Interpreter\obj\Release\Interpreter.csprojAssemblyReference.cache

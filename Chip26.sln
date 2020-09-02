@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Graphics", "Graphics\Graphics.csproj", "{585E6824-EE88-4199-9E39-61F74AF313CF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chip26", "Graphics\Chip26.csproj", "{585E6824-EE88-4199-9E39-61F74AF313CF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Interpreter", "Interpreter\Interpreter.csproj", "{9A739A6C-DCF8-4C91-BFB3-8BD6A30C8C35}"
 EndProject
