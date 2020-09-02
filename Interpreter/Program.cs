@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using static RegexDefinitions.RegexDefine;
+using System.Configuration;
 
 
 namespace CPU
@@ -80,6 +81,7 @@ namespace CPU
         public int prevKey;
         public bool debugDraw;
         public int rowBuffer;
+        public Dictionary<string, string> cfg;
 
 
         /// <summary>
@@ -143,6 +145,8 @@ namespace CPU
             //define everything
             random = new Random();
             memory = LoadData();
+            LoadCFG();
+
 
             stopwatch = new Stopwatch();
             
@@ -194,15 +198,31 @@ namespace CPU
 
             return memory;
 
+        }
+
+        public void LoadCFG()
+        {
+            //Dictionary<string, string> cooldict = new Dictionary<string, string>(ConfigurationManager.AppSettings);
+
+            if (ConfigurationManager.AppSettings["k3"] != null)
+            {
+                Debug.WriteLine(ConfigurationManager.AppSettings["k3"]);
+            }
+            else
+            {
+                Debug.WriteLine("uhoh");
+            }
+
+
 
         }
 
-        /// <summary>
-        /// This gets called whenever a key is pressed/released and it sets the keyPress/keyRelease variable to the ASCII code of the key pressed/released
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="state"></param>
-        public void GetKey(int key, bool state)
+            /// <summary>
+            /// This gets called whenever a key is pressed/released and it sets the keyPress/keyRelease variable to the ASCII code of the key pressed/released
+            /// </summary>
+            /// <param name="key"></param>
+            /// <param name="state"></param>
+            public void GetKey(int key, bool state)
         {
             Debug.WriteLine($"GetKey called with parameters key={key} and state={state}");
 
