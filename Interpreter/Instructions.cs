@@ -45,8 +45,12 @@ namespace CPU
         //00E0
         public static void clr(Interpreter intr)
         {
+            //Redraw screen this frame
             intr.drawFlag = true;
+            
+            //clear screen
             intr.display = new int[64*32];
+            
             intr.pc += 2;
         }
 

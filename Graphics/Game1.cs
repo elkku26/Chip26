@@ -19,9 +19,8 @@ namespace Graphics
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Texture2D texture;
-        Vector2 position;
         Vector2 scale;
-        Interpreter inter;
+        Interpreter intr;
         Stopwatch updateLoopTimer;
         Stopwatch perfMeasureSW;
         Keys[] keys;
@@ -42,14 +41,16 @@ namespace Graphics
         {
             if (args.Length != 0)
             {
-                inter = new Interpreter(args[0]);
+                intr = new Interpreter(args[0]);
             }
             else
             {
-                inter = new Interpreter(@"C:\Users\elias\Desktop\CHIP-26 Project\Test Programs\Space Invaders.ch8");
+                intr = new Interpreter(@"C:\Users\elias\Desktop\CHIP-26 Project\Test Programs\Addition.ch8");
             }
 
-            KeyStateChanged += inter.GetKey;
+            
+
+            KeyStateChanged += intr.GetKey;
             
             graphics = new GraphicsDeviceManager(this);
 
@@ -72,7 +73,8 @@ namespace Graphics
             beepInstance = beep.CreateInstance();
 
             Content.RootDirectory = "Content";
-            position = new Vector2(0, 0);
+
+
 
             scale = new Vector2(screenScalar, screenScalar);
 
@@ -159,7 +161,7 @@ namespace Graphics
 
 
         /// <summary>
-        /// CheckForKeyPress will be called once every frame and it notifies the interpreter about any
+        /// CheckForKeyPress will be called once every frame and it notifies the intrpreter about any
         /// possible keystate changes that have occurred
         /// </summary>
         protected void CheckForKeyPress()
@@ -242,9 +244,9 @@ namespace Graphics
 
             for (int i = 0; i < 2048; i++)
             {
-                if (inter.display[i] != (int)colorLookup[colorData[i]])
+                if (intr.display[i] != (int)colorLookup[colorData[i]])
                 {
-                    colorData[i] = (Color)colorLookup[inter.display[i]];
+                    colorData[i] = (Color)colorLookup[intr.display[i]];
                 }
 
             }
@@ -266,7 +268,7 @@ namespace Graphics
             perfMeasureSW.Reset();
             
             //if the debug draw option is on, pause for 2,5 seconds before continuing
-            if (inter.debugDraw)
+            if (intr.debugDraw)
             {
                 Thread.Sleep(2500);
             }
@@ -288,11 +290,11 @@ namespace Graphics
 
             if (IsActive)
             {
-                //start perfMeasureSW to measure performance of the interpreter step method
+                //start perfMeasureSW to measure performance of the intrpreter step method
                 perfMeasureSW.Start();
 
-                //step the interpreter
-                inter.Advance();
+                //step the intrpreter
+                intr.Advance();
 
                 perfMeasureSW.Stop();
                 
@@ -305,7 +307,7 @@ namespace Graphics
 
 
                 //if the drawglag is set, 
-                if (inter.drawFlag)
+                if (intr.drawFlag)
                 {
                     perfMeasureSW.Start();
 
@@ -346,7 +348,7 @@ namespace Graphics
             perfMeasureSW.Start();
 
             spriteBatch.Begin(samplerState:SamplerState.PointClamp);
-            spriteBatch.Draw(texture: texture, position: position, scale: scale);
+            spriteBatch.Draw(texture: texture, position: new Vector2(0,0), scale: scale);
             spriteBatch.End();
 
             perfMeasureSW.Stop();
@@ -371,19 +373,19 @@ namespace Graphics
 
 
 
-            inter.delayTimer -= (float)(0.06 * updateLoopTimer.Elapsed.TotalMilliseconds);
+            intr.delayTimer -= (float)(0.06 * updateLoopTimer.Elapsed.TotalMilliseconds);
             
-            inter.soundTimer -= (float)(0.06 * updateLoopTimer.Elapsed.TotalMilliseconds);
+            intr.soundTimer -= (float)(0.06 * updateLoopTimer.Elapsed.TotalMilliseconds);
 
-            if (inter.delayTimer < 0)
+            if (intr.delayTimer < 0)
             {
-                inter.delayTimer = 0;
+                intr.delayTimer = 0;
             }
 
 
-            if (inter.soundTimer <= 0)
+            if (intr.soundTimer <= 0)
             {
-                inter.soundTimer = 0;
+                intr.soundTimer = 0;
                 beepInstance.Stop();
             }
             else
@@ -397,9 +399,9 @@ namespace Graphics
             updateLoopTimer.Reset();
 
 
-            Debug.WriteLine($"delaytimer={inter.delayTimer}");
+            Debug.WriteLine($"delaytimer={intr.delayTimer}");
 
-            Debug.WriteLine($"soundtimer={inter.soundTimer}");
+            Debug.WriteLine($"soundtimer={intr.soundTimer}");
 
 
         }

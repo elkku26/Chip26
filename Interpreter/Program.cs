@@ -154,29 +154,37 @@ namespace CPU
 
             i = 0;
 
+            /// <summary>
+            /// Store the memory address of the current location of the program
+            /// </summary>
             pc = 512;
 
-            stack = new Stack<short>();
+            /// <summary>
+            /// Stores the full call stack, used for calling and returning.
+            /// </summary>
+            stack = new Stack<short>(16);
+            
+            Debug.WriteLine($"\nNow running: {rom}");
 
-
-            Debug.WriteLine("Now running: {0}", rom);
-
-            //legacyMode = true;
 
         }
 
         public byte[] LoadData()
         {
+            //Initialize memory
             byte[] memory = new byte[4096];
 
-            for (int i = 0; i<75; i++)
+            for (int i = 0; i<80; i++)
             {
                 memory[i] = fontData[i];
             }
 
-            //var currentDir = AppDomain.CurrentDomain.BaseDirectory;
-            FileStream fs = new FileStream(this.rom, FileMode.Open);
 
+            //Start filestream for the ROM to load
+            FileStream fs = new FileStream(rom, FileMode.Open);
+
+
+            //Load the ROM to memory through the file
             int hexIn;
 
             for (int i = 0; (hexIn = fs.ReadByte()) != -1; i++)
@@ -190,7 +198,7 @@ namespace CPU
         }
 
         /// <summary>
-        /// This gets called whenever a key is pressed and it sets the keyPress variable to the ASCII code of the key pressed
+        /// This gets called whenever a key is pressed/released and it sets the keyPress/keyRelease variable to the ASCII code of the key pressed/released
         /// </summary>
         /// <param name="key"></param>
         /// <param name="state"></param>
