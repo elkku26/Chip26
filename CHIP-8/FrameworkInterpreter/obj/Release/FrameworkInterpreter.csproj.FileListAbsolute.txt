@@ -1,7 +1,0 @@
-C:\Users\elias\source\repos\CHIP-8\FrameworkInterpreter\bin\Release\FrameworkInterpreter.exe.config
-C:\Users\elias\source\repos\CHIP-8\FrameworkInterpreter\bin\Release\FrameworkInterpreter.exe
-C:\Users\elias\source\repos\CHIP-8\FrameworkInterpreter\bin\Release\FrameworkInterpreter.pdb
-C:\Users\elias\source\repos\CHIP-8\FrameworkInterpreter\obj\Release\FrameworkInterpreter.csprojAssemblyReference.cache
-C:\Users\elias\source\repos\CHIP-8\FrameworkInterpreter\obj\Release\FrameworkInterpreter.csproj.CoreCompileInputs.cache
-C:\Users\elias\source\repos\CHIP-8\FrameworkInterpreter\obj\Release\FrameworkInterpreter.exe
-C:\Users\elias\source\repos\CHIP-8\FrameworkInterpreter\obj\Release\FrameworkInterpreter.pdb
