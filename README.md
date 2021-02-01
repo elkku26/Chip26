@@ -1,4 +1,7 @@
-# Chip26
+# Chip26 <br/>
+An emulator for the old Chip-8 system, built in .NET
+
+
 
 # How-To <br/>
 Download the roms you want to use. <br/>
