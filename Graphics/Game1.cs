@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.IO;
 
 namespace Graphics
 {
@@ -45,7 +46,7 @@ namespace Graphics
             }
             else
             {
-                intr = new Interpreter(@"C:\Users\elias\Desktop\CHIP-26 Project\Test Programs\Addition.ch8");
+                intr = new Interpreter(Directory.GetCurrentDirectory() + "/Space Invaders.ch8");
             }
 
             
@@ -57,7 +58,7 @@ namespace Graphics
             updateLoopTimer = new Stopwatch();
 
             screenScalar = 15;
-            slowDownMultiplier = 2;
+            slowDownMultiplier = 1;
 
             graphics.PreferredBackBufferWidth = 64 * screenScalar;
             graphics.PreferredBackBufferHeight = 32 * screenScalar;
@@ -145,11 +146,10 @@ namespace Graphics
 
 
             //beep = Content.Load<SoundEffect>("Beep");
-            // TODO: use this.Content to load your game content here
         }
         
 
-        /// <summary>
+        /// <sumary>
         /// UnloadContent will be called once per game and is the place to unload
         /// game-specific content.
         /// </summary>

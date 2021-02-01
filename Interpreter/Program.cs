@@ -5,7 +5,6 @@ using System.Diagnostics;
 using static RegexDefinitions.RegexDefine;
 using System.Configuration;
 
-
 namespace CPU
 {
 
@@ -38,7 +37,7 @@ namespace CPU
                 intr.Advance();
                 stopwatch.Stop();
 
-                Console.WriteLine($"execution time in ms = {stopwatch.ElapsedMilliseconds}");
+                Debug.WriteLine($"execution time in ms = {stopwatch.ElapsedMilliseconds}");
 
                 stopwatch.Reset();
             }
@@ -74,6 +73,7 @@ namespace CPU
         public string rom;
         public short nnn;
         public string currentInstruction;
+        public byte byteInstruction;
         public int spriteCoordinateX;
         public int spriteCoordinateY;
         public int keyPress;
@@ -83,7 +83,7 @@ namespace CPU
         public int rowBuffer;
         public Dictionary<string, string> cfg;
 
-
+        
         /// <summary>
         /// usedInstructions stores a list of all instructions used in the current program, useful for debugging
         /// </summary>
@@ -136,7 +136,7 @@ namespace CPU
                                               0xF0, 0x80, 0xF0, 0x80, 0xF0,
                                               0xF0, 0x80, 0xF0, 0x80, 0x80 };
 
-        public Interpreter(string rom= @"C:\Users\elias\Desktop\Clock Program [Bill Fisher, 1981].ch8", bool debugDraw=false)
+        public Interpreter(string rom, bool debugDraw=false)
         {
             this.rom = rom;
 
@@ -158,14 +158,8 @@ namespace CPU
 
             i = 0;
 
-            /// <summary>
-            /// Store the memory address of the current location of the program
-            /// </summary>
             pc = 512;
 
-            /// <summary>
-            /// Stores the full call stack, used for calling and returning.
-            /// </summary>
             stack = new Stack<short>(16);
             
             Debug.WriteLine($"\nNow running: {rom}");
@@ -204,9 +198,9 @@ namespace CPU
         {
             //Dictionary<string, string> cooldict = new Dictionary<string, string>(ConfigurationManager.AppSettings);
 
-            if (ConfigurationManager.AppSettings["k3"] != null)
+            if (ConfigurationManager.AppSettings["k2"] != null)
             {
-                Debug.WriteLine(ConfigurationManager.AppSettings["k3"]);
+                Debug.WriteLine(ConfigurationManager.AppSettings["k1"]);
             }
             else
             {
@@ -263,6 +257,7 @@ namespace CPU
                 //if the pressed key is in the keymap we set keyPress to it
                 if (buttonMap.ContainsKey(key))
                 {
+                    
                     keyPress = buttonMap[key];
                 }
 
@@ -294,17 +289,18 @@ namespace CPU
             //check if reached end of memory;
             if (pc >= 4095)
             {
-                Console.WriteLine("ERR: reached end of memory");
+                Debug.WriteLine("ERR: reached end of memory");
             }
             else if (currentInstruction == "0000")
             {
-                Console.WriteLine("ERR: empty opcode");
+                Debug.WriteLine("ERR: empty opcode");
             }
 
 
             //parse current instruction and set it to a variable
             currentInstruction = String.Format("{0:X2}", memory[pc]) + String.Format("{0:X2}", memory[pc + 1]);
-
+            byteInstruction = memory[pc];
+            Debug.WriteLine("Instruction as byte: " + byteInstruction);
 
             //parse x
             x = Convert.ToInt16(Convert.ToString(currentInstruction[1]),16);
@@ -322,8 +318,8 @@ namespace CPU
             nnn = Convert.ToInt16(currentInstruction.Substring(1), 16);
 
 
-            Console.WriteLine($"\npc={pc}");
-            Console.WriteLine($"The current instruction is:{currentInstruction} ");
+            Debug.WriteLine($"\npc={pc}");
+            Debug.WriteLine($"The current instruction is:{currentInstruction} ");
 
 
 
@@ -335,7 +331,7 @@ namespace CPU
             switch (currentInstruction)
             {
                 case "00E0":
-                    Console.WriteLine("00E0");
+                    Debug.WriteLine("00E0");
 
                     if(!usedInstructions.Contains("00E0"))
                     {
@@ -348,7 +344,7 @@ namespace CPU
 
                 case "00EE":
 
-                    Console.WriteLine("00EE");
+                    Debug.WriteLine("00EE");
 
                     if (!usedInstructions.Contains("00EE"))
                     {
@@ -361,7 +357,7 @@ namespace CPU
 
 
                 case var dummy when One_addr.IsMatch(dummy):
-                    Console.WriteLine("1nnn");
+                    Debug.WriteLine("1nnn");
                     if (!usedInstructions.Contains("1nnn"))
                     {
                         usedInstructions.Add("1nnn");
@@ -374,7 +370,7 @@ namespace CPU
 
 
                 case var dummy when Two_addr.IsMatch(dummy):
-                    Console.WriteLine("2nnn");
+                    Debug.WriteLine("2nnn");
 
                     if (!usedInstructions.Contains("2nnn"))
                     {
@@ -387,7 +383,7 @@ namespace CPU
 
 
                 case var dummy when Three.IsMatch(dummy):
-                    Console.WriteLine("3xkk");
+                    Debug.WriteLine("3xkk");
 
                     if (!usedInstructions.Contains("3xkk"))
                     {
@@ -401,7 +397,7 @@ namespace CPU
 
 
                 case var dummy when Four.IsMatch(dummy):
-                    Console.WriteLine("4xkk");
+                    Debug.WriteLine("4xkk");
 
                     if (!usedInstructions.Contains("4xkk"))
                     {
@@ -415,7 +411,7 @@ namespace CPU
 
 
                 case var dummy when Five.IsMatch(dummy):
-                    Console.WriteLine("5xy0");
+                    Debug.WriteLine("5xy0");
 
                     if (!usedInstructions.Contains("5xy0"))
                     {
@@ -429,7 +425,7 @@ namespace CPU
 
 
                 case var dummy when Six.IsMatch(dummy):
-                    Console.WriteLine("6xkk");
+                    Debug.WriteLine("6xkk");
 
                     if (!usedInstructions.Contains("6xkk"))
                     {
@@ -443,7 +439,7 @@ namespace CPU
 
 
                 case var dummy when Seven.IsMatch(dummy):
-                    Console.WriteLine("7xkk");
+                    Debug.WriteLine("7xkk");
 
                     if (!usedInstructions.Contains("7xkk"))
                     {
@@ -457,7 +453,7 @@ namespace CPU
 
 
                 case var dummy when Eight_load.IsMatch(dummy):
-                    Console.WriteLine("8xy0");
+                    Debug.WriteLine("8xy0");
 
                     if (!usedInstructions.Contains("8xy0"))
                     {
@@ -471,7 +467,7 @@ namespace CPU
 
 
                 case var dummy when Eight_or.IsMatch(dummy):
-                    Console.WriteLine("8xy1");
+                    Debug.WriteLine("8xy1");
 
                     if (!usedInstructions.Contains("8xy1"))
                     {
@@ -486,7 +482,7 @@ namespace CPU
 
 
                 case var dummy when Eight_and.IsMatch(dummy):
-                    Console.WriteLine("8xy2");
+                    Debug.WriteLine("8xy2");
 
                     if (!usedInstructions.Contains("8xy2"))
                     {
@@ -501,7 +497,7 @@ namespace CPU
 
 
                 case var dummy when Eight_xor.IsMatch(dummy):
-                    Console.WriteLine("8xy3");
+                    Debug.WriteLine("8xy3");
 
                     if (!usedInstructions.Contains("8xy3"))
                     {
@@ -516,7 +512,7 @@ namespace CPU
 
 
                 case var dummy when Eight_add.IsMatch(dummy):
-                    Console.WriteLine("8xy4");
+                    Debug.WriteLine("8xy4");
 
                     if (!usedInstructions.Contains("8xy4"))
                     {
@@ -531,7 +527,7 @@ namespace CPU
 
 
                 case var dummy when Eight_sub.IsMatch(dummy):
-                    Console.WriteLine("8xy5");
+                    Debug.WriteLine("8xy5");
 
                     if (!usedInstructions.Contains("8xy5"))
                     {
@@ -546,7 +542,7 @@ namespace CPU
 
 
                 case var dummy when Eight_shr.IsMatch(dummy):
-                    Console.WriteLine("8xy6");
+                    Debug.WriteLine("8xy6");
 
 
                     if (!usedInstructions.Contains("8xy6"))
@@ -562,14 +558,14 @@ namespace CPU
 
 
                 case var dummy when Eight_subn.IsMatch(dummy):
-                    Console.WriteLine("8xy7");
+                    Debug.WriteLine("8xy7");
                     Instructions.subn_vy_vx(this);
                     
                     return;
 
 
                 case var dummy when Eight_shl.IsMatch(dummy):
-                    Console.WriteLine("8xyE");
+                    Debug.WriteLine("8xyE");
 
                     if (!usedInstructions.Contains("8xyE"))
                     {
@@ -584,7 +580,7 @@ namespace CPU
 
 
                 case var dummy when Nine.IsMatch(dummy):
-                    Console.WriteLine("9xy0");
+                    Debug.WriteLine("9xy0");
 
                     if (!usedInstructions.Contains("9xy0"))
                     {
@@ -607,14 +603,14 @@ namespace CPU
 
 
 
-                    Console.WriteLine($"Annn where nnn = {currentInstruction.Substring(1, 3)}");
+                    Debug.WriteLine($"Annn where nnn = {currentInstruction.Substring(1, 3)}");
                     Instructions.ld_i_nnn(this);
 
                     return;
 
 
                 case var dummy when B_addr.IsMatch(dummy):
-                    Console.WriteLine("Bnnn");
+                    Debug.WriteLine("Bnnn");
 
                     if (!usedInstructions.Contains("Bnnn"))
                     {
@@ -628,7 +624,7 @@ namespace CPU
 
 
                 case var dummy when C_addr.IsMatch(dummy):
-                    Console.WriteLine("Cxkk");
+                    Debug.WriteLine("Cxkk");
 
                     if (!usedInstructions.Contains("Cxkk"))
                     {
@@ -651,7 +647,7 @@ namespace CPU
 
                     stopwatch.Start();
 
-                    Console.WriteLine("Dxyn");
+                    Debug.WriteLine("Dxyn");
 
                     if (!usedInstructions.Contains("Dxyn"))
                     {
@@ -662,7 +658,7 @@ namespace CPU
                     Instructions.drw(this);
 
                     stopwatch.Stop();
-                    Console.WriteLine($"draw function elapsed ms = {stopwatch.ElapsedMilliseconds}");
+                    Debug.WriteLine($"draw function elapsed ms = {stopwatch.ElapsedMilliseconds}");
                     stopwatch.Reset();
 
 
@@ -670,7 +666,7 @@ namespace CPU
                 #endregion
 
                 case var dummy when E_skp.IsMatch(dummy):
-                    Console.WriteLine("Ex9E");
+                    Debug.WriteLine("Ex9E");
 
                     if (!usedInstructions.Contains("Ex9E"))
                     {
@@ -684,7 +680,7 @@ namespace CPU
 
 
                 case var dummy when E_sknp.IsMatch(dummy):
-                    Console.WriteLine("ExA1");
+                    Debug.WriteLine("ExA1");
 
                     if (!usedInstructions.Contains("ExA1"))
                     {
@@ -699,7 +695,7 @@ namespace CPU
 
 
                 case var dummy when F_load_from_dt.IsMatch(dummy):
-                    Console.WriteLine("Fx07");
+                    Debug.WriteLine("Fx07");
 
                     if (!usedInstructions.Contains("Fx07"))
                     {
@@ -715,7 +711,7 @@ namespace CPU
 
 
                 case var dummy when F_load_key.IsMatch(dummy):
-                    Console.WriteLine("Fx0A");
+                    Debug.WriteLine("Fx0A");
 
                     if (!usedInstructions.Contains("Fx0A"))
                     {
@@ -729,7 +725,7 @@ namespace CPU
 
 
                 case var dummy when F_load_to_dt.IsMatch(dummy):
-                    Console.WriteLine("Fx15");
+                    Debug.WriteLine("Fx15");
 
                     if (!usedInstructions.Contains("Fx15"))
                     {
@@ -745,7 +741,7 @@ namespace CPU
 
 
                 case var dummy when F_load_to_st.IsMatch(dummy):
-                    Console.WriteLine("Fx18");
+                    Debug.WriteLine("Fx18");
 
                     if (!usedInstructions.Contains("Annn"))
                     {
@@ -758,7 +754,7 @@ namespace CPU
                     return;
 
                 case var dummy when Add_i_vx.IsMatch(dummy):
-                    Console.WriteLine("Fx1E");
+                    Debug.WriteLine("Fx1E");
 
                     if (!usedInstructions.Contains("Fx1E"))
                     {
@@ -772,7 +768,7 @@ namespace CPU
 
 
                 case var dummy when Load_f_vx.IsMatch(dummy):
-                    Console.WriteLine("Fx29");
+                    Debug.WriteLine("Fx29");
 
                     if (!usedInstructions.Contains("Fx29"))
                     {
@@ -786,7 +782,7 @@ namespace CPU
 
 
                 case var dummy when Load_b_vx.IsMatch(dummy):
-                    Console.WriteLine("Fx33");
+                    Debug.WriteLine("Fx33");
 
                     if (!usedInstructions.Contains("Fx33"))
                     {
@@ -799,7 +795,7 @@ namespace CPU
                     return;
 
                 case var dummy when Load_i_vx.IsMatch(dummy):
-                    Console.WriteLine("Fx55");
+                    Debug.WriteLine("Fx55");
 
                     if (!usedInstructions.Contains("Fx55"))
                     {
@@ -812,7 +808,7 @@ namespace CPU
                     return;
 
                 case var dummy when Load_vx_i.IsMatch(dummy):
-                    Console.WriteLine("Fx65");
+                    Debug.WriteLine("Fx65");
 
                     if (!usedInstructions.Contains("Fx65"))
                     {
@@ -827,7 +823,7 @@ namespace CPU
 
 
                 default:
-                    Console.WriteLine("Unknown instruction");
+                    Debug.WriteLine("Unknown instruction");
                     pc += 2;
                     return;
 
